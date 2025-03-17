@@ -1,13 +1,14 @@
 // Necessary Imports (you will need to use this)
-const { Student } = require('./Student')
+const { Student } = require('./Student');
+const fs = require('node:fs/promises');
 
 /**
  * Node Class (GIVEN, you will need to use this)
  */
 class Node {
   // Public Fields
-  data               // Student
-  next               // Object
+  data; // Student
+  next; // Object
   /**
    * REQUIRES:  The fields specified above
    * EFFECTS:   Creates a new Node instance
@@ -15,7 +16,7 @@ class Node {
    */
   constructor(data, next = null) {
     this.data = data;
-    this.next = next
+    this.next = next;
   }
 }
 
@@ -26,129 +27,194 @@ class Node {
  */
 class LinkedList {
   // Public Fields
-  head              // Object
-  tail              // Object
-  length            // Number representing size of LinkedList
+  head; // Object
+  tail; // Object
+  length; // Number representing size of LinkedList
 
-  /**
-   * REQUIRES:  None
-   * EFFECTS:   Creates a new LinkedList instance (empty)
-   * RETURNS:   None
-   */
   constructor() {
-    // TODO
+    this.head = null;
+    this.tail = null;
+    this.length = 0;
   }
 
-  /**
-   * REQUIRES:  A new student (Student)
-   * EFFECTS:   Adds a Student to the end of the LinkedList
-   * RETURNS:   None
-   * CONSIDERATIONS:
-   * - Think about the null case
-   * - Think about adding to the 'end' of the LinkedList (Hint: tail)
-   */
-  addStudent(newStudent) {
-    // TODO
+  addStudent(student) {
+    const newNode = new Node(student);
+    if (!this.head) {
+      this.head = newNode;
+      this.tail = newNode;
+    } else {
+      this.tail.next = newNode;
+      this.tail = newNode;
+    }
+    this.length++;
   }
 
-  /**
-   * REQUIRES:  email(String)
-   * EFFECTS:   Removes a student by email (assume unique)
-   * RETURNS:   None
-   * CONSIDERATIONS:
-   * - Think about the null case
-   * - Think about how removal might update head or tail
-   */
   removeStudent(email) {
-    // TODO
+    // if length is zero returb
+    if (this.length === 0) {
+      return;
+    }
+    // if length is one and email matches head node
+    if (this.length === 1) {
+      if (this.head.data.getEmail() === email) {
+        this.head = null;
+        this.tail = null;
+        this.length--;
+        return;
+      } else {
+        return;
+      }
+    }
+
+    // if lenth is greater than 1 and head email matches
+    if (this.length > 1 && this.head.data.getEmail() === email) {
+      let currentHead = this.head;
+      this.head = currentHead.next;
+      this.length--;
+      return;
+    }
+
+    // if student to be removed is from middle or last
+    let current = this.head;
+    let prev = null;
+
+    while (current.next) {
+      prev = current;
+      current = current.next;
+
+      if (current.data.getEmail() === email) {
+        // student to be removed is last node;
+        if (current === this.tail) {
+          prev.next = null;
+          this.tail = prev;
+          this.length--;
+        } else {
+          prev.next = current.next;
+          this.length--;
+        }
+        return;
+      }
+    }
   }
 
-  /**
-   * REQUIRES:  email (String)
-   * EFFECTS:   None
-   * RETURNS:   The Student or -1 if not found
-   */
   findStudent(email) {
-    // TODO
-    return -1
+    if (this.length === 0) {
+      return -1;
+    }
+    let current = this.head;
+    while (current) {
+      if (current.data.getEmail() === email) {
+        return current.data;
+      }
+      current = current.next;
+    }
+    return -1;
   }
 
-  /**
-   * REQUIRES:  None
-   * EFFECTS:   Clears all students from the Linked List
-   * RETURNS:   None
-   */
-  #clearStudents() {
-    // TODO
+  clearStudents() {
+    this.head = null;
+    this.tail = null;
+    this.length = 0;
   }
 
-  /**
-   * REQUIRES:  None
-   * EFFECTS:   None
-   * RETURNS:   LinkedList as a String for console.log in caller
-   * CONSIDERATIONS:
-   *  - Let's assume you have a LinkedList with two people
-   *  - Output should appear as: "JohnDoe, JaneDoe"
-   */
   displayStudents() {
-    // TODO
-    return "";
+    let output = [];
+    let current = this.head;
+    while (current) {
+      output.push(current.data.getName());
+      current = current.next;
+    }
+    return output.join(', ');
   }
 
-  /**
-   * REQUIRES:  None
-   * EFFECTS:   None
-   * RETURNS:   A sorted array of students by name
-   */
   #sortStudentsByName() {
-    // TODO
-    return [];
+    let sortedArray = [];
+    let current = this.head;
+    while (current) {
+      sortedArray.push(current.data.getName());
+      current = current.next;
+    }
+    return sortedArray.sort();
   }
 
-  /**
-   * REQUIRES:  specialization (String)
-   * EFFECTS:   None
-   * RETURNS:   An array of students matching the specialization, sorted alphabetically by student name
-   * CONSIDERATIONS:
-   * - Use sortStudentsByName()
-   */
   filterBySpecialization(specialization) {
-    // TODO
-    return [];
+    const filteredArray = [];
+    let current = this.head;
+    if (!current) {
+      return [];
+    }
+    while (current) {
+      if (current.data.getSpecialization() === specialization) {
+        filteredArray.push(current.data);
+      }
+      current = current.next;
+    }
+    if (filteredArray.length === 0) {
+      return [];
+    }
+
+    return filteredArray.sort((a, b) => a.getName().localeCompare(b.getName()));
   }
 
-  /**
-   * REQUIRES:  minAge (Number)
-   * EFFECTS:   None
-   * RETURNS:   An array of students who are at least minAge, sorted alphabetically by student name
-   * CONSIDERATIONS:
-   * - Use sortStudentsByName()
-   */
   filterByMinAge(minAge) {
-    // TODO
-    return [];
+    let filteredArray = [];
+    if (!this.head) {
+      return filteredArray;
+    }
+    let current = this.head;
+    while (current) {
+      if (current.data.getYear() >= minAge) {
+        filteredArray.push(current.data);
+      }
+      current = current.next;
+    }
+    if (filteredArray.length === 0) {
+      return [];
+    }
+    return filteredArray.sort((a, b) => a.getName().localeCompare(b.getName()));
   }
 
-  /**
-   * REQUIRES:  A valid file name (String)
-   * EFFECTS:   Writes the LinkedList to a JSON file with the specified file name
-   * RETURNS:   None
-   */
   async saveToJson(fileName) {
-    // TODO
+    try {
+      let content = [];
+      let current = this.head;
+      while (current) {
+        let student = {
+          name: current.data.getName(),
+          year: current.data.getYear(),
+          email: current.data.getEmail(),
+          specialization: current.data.getSpecialization(),
+        };
+        content.push(student);
+        current = current.next;
+      }
+      let data = JSON.stringify(content);
+      await fs.writeFile(fileName, data);
+    } catch (error) {
+      console.log(error);
+    }
   }
 
-  /**
-   * REQUIRES:  A valid file name (String) that exists
-   * EFFECTS:   Loads data from the specified fileName, overwrites existing LinkedList
-   * RETURNS:   None
-   * CONSIDERATIONS:
-   *  - Use clearStudents() to perform overwriting
-   */
   async loadFromJSON(fileName) {
-    // TODO
+    try {
+      const data = await fs.readFile(fileName, {
+        encoding: 'utf8',
+      });
+      this.clearStudents();
+      let parsedData = JSON.parse(data);
+      parsedData.forEach((element) => {
+        const student = new Student(
+          element.name,
+          element.year,
+          element.email,
+          element.specialization
+        );
+        this.addStudent(student);
+      });
+    } catch (err) {
+      console.log(err);
+    }
   }
-
 }
 
-module.exports = { LinkedList }
+module.exports = { LinkedList };
